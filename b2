@@ -1,8 +1,5 @@
-# HG changeset patch
-# User L. David Baron <dbaron@dbaron.org>
-# Date 1315412427 25200
-# Node ID 9bad9985b2eb87424ca57d6cf8cef2d8dbd9f4c5
-# Parent 774b85ea434515f775c2b1dec40fab676749c194
+From: L. David Baron <dbaron@dbaron.org>
+
 Backout changeset 58fe3ede72f8 (bug 611099, part 2) until bug 668163 is fixed.  approval-mozilla-aurora=clegnitto
 
 diff --git a/layout/reftests/svg/as-image/img-novb-height-all-1-ref.html b/layout/reftests/svg/as-image/img-novb-height-all-1-ref.html

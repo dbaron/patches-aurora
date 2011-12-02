@@ -1,8 +1,5 @@
-# HG changeset patch
-# User L. David Baron <dbaron@dbaron.org>
-# Date 1315412426 25200
-# Node ID d6c48e7f9b9d5ff5a8ff3f592eb6a65e2d5efedf
-# Parent b2cdeab583f605be4953bd6d4d65a317f580c969
+From: L. David Baron <dbaron@dbaron.org>
+
 Backout changeset 3af9fed4e33a (bug 611099, part 3) until bug 668163 is fixed.  approval-mozilla-aurora=clegnitto
 
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp

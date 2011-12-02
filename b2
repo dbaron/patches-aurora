@@ -2,7 +2,7 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1315412427 25200
 # Node ID 9bad9985b2eb87424ca57d6cf8cef2d8dbd9f4c5
-# Parent  d6c48e7f9b9d5ff5a8ff3f592eb6a65e2d5efedf
+# Parent 774b85ea434515f775c2b1dec40fab676749c194
 Backout changeset 58fe3ede72f8 (bug 611099, part 2) until bug 668163 is fixed.  approval-mozilla-aurora=clegnitto
 
 diff --git a/layout/reftests/svg/as-image/img-novb-height-all-1-ref.html b/layout/reftests/svg/as-image/img-novb-height-all-1-ref.html
@@ -622,7 +622,7 @@ diff --git a/layout/svg/base/src/nsSVGOuterSVGFrame.cpp b/layout/svg/base/src/ns
  nsSVGOuterSVGFrame::ComputeSize(nsRenderingContext *aRenderingContext,
                                  nsSize aCBSize, nscoord aAvailableWidth,
                                  nsSize aMargin, nsSize aBorder, nsSize aPadding,
-                                 PRBool aShrinkWrap)
+                                 bool aShrinkWrap)
  {
    nsSVGSVGElement* content = static_cast<nsSVGSVGElement*>(mContent);
  
@@ -652,8 +652,8 @@ diff --git a/layout/svg/base/src/nsSVGOuterSVGFrame.cpp b/layout/svg/base/src/ns
 -
 -      nsSVGLength2 &height =
 -        content->mLengthAttributes[nsSVGSVGElement::HEIGHT];
--      NS_ABORT_IF_FALSE(aCBSize.height != NS_AUTOHEIGHT,
--                        "root should not have auto-height containing block");
+-      NS_ASSERTION(aCBSize.height != NS_AUTOHEIGHT,
+-                   "root should not have auto-height containing block");
 -      if (height.IsPercentage()) {
 -        NS_ABORT_IF_FALSE(intrinsicSize.height.GetUnit() == eStyleUnit_None,
 -                          "GetIntrinsicSize should have reported no "

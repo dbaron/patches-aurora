@@ -2,7 +2,7 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1315412427 25200
 # Node ID 91108b3935720f0f18ec9d9a2fadf6ab9725e302
-# Parent  9bad9985b2eb87424ca57d6cf8cef2d8dbd9f4c5
+# Parent e6f4b9a969e5718105fd37cfffe747d82be2d546
 Backout changeset c07445f34e92 (bug 611099, part 1) until bug 668163 is fixed.  approval-mozilla-aurora=clegnitto
 
 diff --git a/layout/generic/nsLineLayout.cpp b/layout/generic/nsLineLayout.cpp
@@ -14,7 +14,7 @@ diff --git a/layout/generic/nsLineLayout.cpp b/layout/generic/nsLineLayout.cpp
          fType == nsGkAtoms::gfxButtonControlFrame ||
          fType == nsGkAtoms::fieldSetFrame ||
          fType == nsGkAtoms::comboboxDisplayFrame) {
-       return PR_TRUE;
+       return true;
      }
  
 -    // Per CSS 2.1, section 10.3.2:
@@ -31,7 +31,7 @@ diff --git a/layout/generic/nsLineLayout.cpp b/layout/generic/nsLineLayout.cpp
 -      const nsIFrame::IntrinsicSize &intrinsicSize = f->GetIntrinsicSize();
 -      if (intrinsicSize.width.GetUnit() == eStyleUnit_None &&
 -          intrinsicSize.height.GetUnit() == eStyleUnit_None) {
--        return PR_TRUE;
+-        return true;
 -      }
 +    // Handle SVG, which doesn't map width/height into style
 +    if ((
@@ -40,11 +40,11 @@ diff --git a/layout/generic/nsLineLayout.cpp b/layout/generic/nsLineLayout.cpp
 +         fType == nsGkAtoms::subDocumentFrame) &&
 +        const_cast<nsIFrame*>(aFrame)->GetIntrinsicSize().width.GetUnit() ==
 +        eStyleUnit_Percent) {
-+      return PR_TRUE;
++      return true;
      }
    }
  
-   return PR_FALSE;
+   return false;
  }
  
  nsresult

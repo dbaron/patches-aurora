@@ -2,7 +2,7 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1315412426 25200
 # Node ID d6c48e7f9b9d5ff5a8ff3f592eb6a65e2d5efedf
-# Parent  2b4f99e468aa1dadce226c880f6415b2879ab842
+# Parent b2cdeab583f605be4953bd6d4d65a317f580c969
 Backout changeset 3af9fed4e33a (bug 611099, part 3) until bug 668163 is fixed.  approval-mozilla-aurora=clegnitto
 
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
@@ -14,13 +14,13 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
    NS_ASSERTION(aCBSize.width != NS_UNCONSTRAINEDSIZE,
                 "Our containing block must not have unconstrained width!");
  
-   PRBool hasIntrinsicWidth, hasIntrinsicHeight;
+   bool hasIntrinsicWidth, hasIntrinsicHeight;
    nscoord intrinsicWidth, intrinsicHeight;
  
 -  if (aIntrinsicSize.width.GetUnit() == eStyleUnit_Coord) {
 +  if (aIntrinsicSize.width.GetUnit() == eStyleUnit_Coord ||
 +      aIntrinsicSize.width.GetUnit() == eStyleUnit_Percent) {
-     hasIntrinsicWidth = PR_TRUE;
+     hasIntrinsicWidth = true;
 -    intrinsicWidth = aIntrinsicSize.width.GetCoordValue();
 -    if (intrinsicWidth < 0)
 -      intrinsicWidth = 0;
@@ -30,7 +30,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
    } else {
 -    NS_ASSERTION(aIntrinsicSize.width.GetUnit() == eStyleUnit_None,
 -                 "unexpected unit");
-     hasIntrinsicWidth = PR_FALSE;
+     hasIntrinsicWidth = false;
      intrinsicWidth = 0;
    }
  
@@ -38,7 +38,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 +  if (aIntrinsicSize.height.GetUnit() == eStyleUnit_Coord ||
 +      (aIntrinsicSize.height.GetUnit() == eStyleUnit_Percent &&
 +       aCBSize.height != NS_AUTOHEIGHT)) {
-     hasIntrinsicHeight = PR_TRUE;
+     hasIntrinsicHeight = true;
 -    intrinsicHeight = aIntrinsicSize.height.GetCoordValue();
 +    intrinsicHeight = nsLayoutUtils::
 +      ComputeHeightDependentValue(aCBSize.height, aIntrinsicSize.height);
@@ -47,7 +47,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
    } else {
 -    NS_ASSERTION(aIntrinsicSize.height.GetUnit() == eStyleUnit_None,
 -                 "unexpected unit");
-     hasIntrinsicHeight = PR_FALSE;
+     hasIntrinsicHeight = false;
      intrinsicHeight = 0;
    }
  
@@ -58,7 +58,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 diff --git a/layout/generic/nsHTMLReflowState.cpp b/layout/generic/nsHTMLReflowState.cpp
 --- a/layout/generic/nsHTMLReflowState.cpp
 +++ b/layout/generic/nsHTMLReflowState.cpp
-@@ -400,17 +400,19 @@ nsHTMLReflowState::InitResizeFlags(nsPre
+@@ -391,17 +391,19 @@ nsHTMLReflowState::InitResizeFlags(nsPre
      (mStylePosition->MinHeightDependsOnContainer() &&
       // FIXME: condition this on not-abspos?
       mStylePosition->mMinHeight.GetUnit() != eStyleUnit_Auto) ||
@@ -82,7 +82,7 @@ diff --git a/layout/generic/nsHTMLReflowState.cpp b/layout/generic/nsHTMLReflowS
 diff --git a/layout/generic/nsIFrame.h b/layout/generic/nsIFrame.h
 --- a/layout/generic/nsIFrame.h
 +++ b/layout/generic/nsIFrame.h
-@@ -1577,19 +1577,20 @@ public:
+@@ -1590,19 +1590,20 @@ public:
        , hPctPadding(0.0f), hPctMargin(0.0f)
      {}
    };

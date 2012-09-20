@@ -2,7 +2,7 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1347993434 25200
 # Node ID c9fade6c42bf156b95094fbfff57d226146a854f
-# Parent  d24079597770c27abdd0033b7a9278f12a87a536
+# Parent d24079597770c27abdd0033b7a9278f12a87a536
 Bug 774169, patch 3:  Treat -moz-transform as a shorthand rather than an alias so the parsing function can know whether it is parsing a prefixed transform.  r=bzbarsky  approval-mozilla-aurora=akeybl
 
 diff --git a/layout/style/Declaration.cpp b/layout/style/Declaration.cpp
@@ -267,7 +267,7 @@ diff --git a/layout/style/nsCSSProps.h b/layout/style/nsCSSProps.h
 diff --git a/layout/style/nsComputedDOMStyle.cpp b/layout/style/nsComputedDOMStyle.cpp
 --- a/layout/style/nsComputedDOMStyle.cpp
 +++ b/layout/style/nsComputedDOMStyle.cpp
-@@ -400,16 +400,28 @@ nsComputedDOMStyle::GetPropertyCSSValue(
+@@ -400,16 +400,29 @@ nsComputedDOMStyle::GetPropertyCSSValue(
  
    nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocumentWeak);
    NS_ENSURE_TRUE(document, NS_ERROR_NOT_AVAILABLE);
@@ -281,7 +281,8 @@ diff --git a/layout/style/nsComputedDOMStyle.cpp b/layout/style/nsComputedDOMSty
 +  // aliases to be enumerable (via GetLength and IndexedGetter), so
 +  // handle them here rather than adding entries to
 +  // GetQueryablePropertyMap.
-+  if (nsCSSProps::PropHasFlags(prop, CSS_PROPERTY_IS_ALIAS)) {
++  if (prop != eCSSProperty_UNKNOWN &&
++      nsCSSProps::PropHasFlags(prop, CSS_PROPERTY_IS_ALIAS)) {
 +    const nsCSSProperty* subprops = nsCSSProps::SubpropertyEntryFor(prop);
 +    NS_ABORT_IF_FALSE(subprops[1] == eCSSProperty_UNKNOWN,
 +                      "must have list of length 1");

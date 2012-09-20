@@ -2,7 +2,7 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1347993434 25200
 # Node ID d24079597770c27abdd0033b7a9278f12a87a536
-# Parent  a514a6e021b74ed36c4f0b9f91cdd7280e1665c2
+# Parent a514a6e021b74ed36c4f0b9f91cdd7280e1665c2
 Bug 774169, patch 2:  Add property_database.js entries for property aliases.  r=bzbarsky  approval-mozilla-aurora=tests
 
 This adds entries for property aliases as though they are shorthands.
@@ -190,7 +190,7 @@ diff --git a/layout/style/test/property_database.js b/layout/style/test/property
  		other_values: [ "preserve-3d" ],
  		invalid_values: []
  	},
-@@ -3833,16 +3836,354 @@ var gCSSProperties = {
+@@ -3833,16 +3836,351 @@ var gCSSProperties = {
  	},
  	"vector-effect": {
  		domProp: "vectorEffect",
@@ -293,10 +293,7 @@ diff --git a/layout/style/test/property_database.js b/layout/style/test/property
 +			"calc(20px + 50%) calc(50% - 10px)",
 +			"calc(-20px) calc(-50%)",
 +			"calc(-20%) calc(-50%)"
-+		].concat(SpecialPowers.getBoolPref("layout.3d-transforms.enabled") ? [
-+			"6px 5px 5px",
-+			"top center 10px"
-+		] : []),
++		],
 +		invalid_values: ["red", "auto", "none", "0.5 0.5", "40px #0000ff",
 +						 "border", "center red", "right diagonal",
 +						 "#00ffff bottom"]

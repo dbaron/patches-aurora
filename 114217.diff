@@ -3,7 +3,7 @@
 # Date 1351271060 -7200
 # Node ID a497b2ec262f168f9fb24e03fe82a13a2f3363e3
 # Parent  d829e9748d41c7595094726e27e115bedfa30ecb
-Bug 804970, patch 5: Handle dynamic changes to the basis for 'rem' units by rebuilding all style data.  r=bzbarsky
+Bug 804970, patch 5: Handle dynamic changes to the basis for 'rem' units by rebuilding all style data.  r=bzbarsky  approval-mozilla-aurora=akeybl
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
 --- a/layout/base/nsCSSFrameConstructor.cpp

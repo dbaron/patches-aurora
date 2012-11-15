@@ -3,7 +3,7 @@
 # Date 1351271060 -7200
 # Node ID 44169599f83b3ec130271d568f6ad0f991522d45
 # Parent  95c3a598ca71902edc43406ccb59ce7e6ad08ea9
-Bug 804970, patch 1: Don't force calc() units out of the rule tree.  r=bzbarsky
+Bug 804970, patch 1: Don't force calc() units out of the rule tree.  r=bzbarsky  approval-mozilla-aurora=akeybl
 
 This moves the calc() handling above the aCanStoreInRuleTree = false,
 which it had no reason to be below.

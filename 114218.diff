@@ -3,7 +3,7 @@
 # Date 1351271060 -7200
 # Node ID e19eaeceeea003ef8d46dfe8b45b175d427367f5
 # Parent 2f329e49153608fb46082aca03c4939d292bae4e
-Bug 804970, patch 6: Don't force rem units out of the rule tree.  r=bzbarsky
+Bug 804970, patch 6: Don't force rem units out of the rule tree.  r=bzbarsky  approval-mozilla-aurora=akeybl
 
 diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
 --- a/layout/style/nsRuleNode.cpp

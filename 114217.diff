@@ -1,8 +1,8 @@
 # HG changeset patch
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1351271060 -7200
-# Node ID 223127705ad2c45909414dd24e08e98b16ebb851
-# Parent  4cbdfdc99de692e766ba7d8f4614a18819ffbe19
+# Node ID a497b2ec262f168f9fb24e03fe82a13a2f3363e3
+# Parent  d829e9748d41c7595094726e27e115bedfa30ecb
 Bug 804970, patch 5: Handle dynamic changes to the basis for 'rem' units by rebuilding all style data.  r=bzbarsky
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
@@ -47,7 +47,7 @@ diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConst
 diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 --- a/layout/base/nsPresContext.cpp
 +++ b/layout/base/nsPresContext.cpp
-@@ -1608,16 +1608,17 @@ nsPresContext::SysColorChangedInternal()
+@@ -1647,16 +1647,17 @@ nsPresContext::UIResolutionChangedIntern
  void
  nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint)
  {
@@ -68,7 +68,7 @@ diff --git a/layout/base/nsPresContext.cpp b/layout/base/nsPresContext.cpp
 diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
 --- a/layout/base/nsPresContext.h
 +++ b/layout/base/nsPresContext.h
-@@ -921,16 +921,24 @@ public:
+@@ -928,16 +928,24 @@ public:
    bool IsGlyph() const {
      return mIsGlyph;
    }
@@ -89,11 +89,11 @@ diff --git a/layout/base/nsPresContext.h b/layout/base/nsPresContext.h
    friend class nsRunnableMethod<nsPresContext>;
    NS_HIDDEN_(void) ThemeChangedInternal();
    NS_HIDDEN_(void) SysColorChangedInternal();
+   NS_HIDDEN_(void) UIResolutionChangedInternal();
  
-   NS_HIDDEN_(void) SetImgAnimations(nsIContent *aParent, uint16_t aMode);
-   NS_HIDDEN_(void) SetSMILAnimations(nsIDocument *aDoc, uint16_t aNewMode,
-                                      uint16_t aOldMode);
-@@ -1168,16 +1176,19 @@ protected:
+   static NS_HIDDEN_(bool)
+   UIResolutionChangedSubdocumentCallback(nsIDocument* aDocument, void* aData);
+@@ -1180,16 +1188,19 @@ protected:
    unsigned              mPendingMediaFeatureValuesChanged : 1;
    unsigned              mPrefChangePendingNeedsReflow : 1;
    unsigned              mMayHaveFixedBackgroundFrames : 1;

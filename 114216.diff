@@ -1,8 +1,8 @@
 # HG changeset patch
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1351271060 -7200
-# Node ID 4cbdfdc99de692e766ba7d8f4614a18819ffbe19
-# Parent  b7208db3d077b79fc95ebe1a52eda7495f8e6ec2
+# Node ID d829e9748d41c7595094726e27e115bedfa30ecb
+# Parent  44169599f83b3ec130271d568f6ad0f991522d45
 Bug 804970, patch 4: Refactor part of RebuildAllStyleData into a helper function (slightly reordering it), so that we can share that part.  r=bzbarsky
 
 diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp

@@ -1,8 +1,8 @@
 # HG changeset patch
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1351271060 -7200
-# Node ID b7208db3d077b79fc95ebe1a52eda7495f8e6ec2
-# Parent  dd0abb35994ca68875713c3a4c420f5ab47be8e8
+# Node ID 44169599f83b3ec130271d568f6ad0f991522d45
+# Parent  95c3a598ca71902edc43406ccb59ce7e6ad08ea9
 Bug 804970, patch 1: Don't force calc() units out of the rule tree.  r=bzbarsky
 
 This moves the calc() handling above the aCanStoreInRuleTree = false,

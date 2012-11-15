@@ -2,13 +2,13 @@
 # User L. David Baron <dbaron@dbaron.org>
 # Date 1351271060 -7200
 # Node ID e19eaeceeea003ef8d46dfe8b45b175d427367f5
-# Parent  a497b2ec262f168f9fb24e03fe82a13a2f3363e3
+# Parent 2f329e49153608fb46082aca03c4939d292bae4e
 Bug 804970, patch 6: Don't force rem units out of the rule tree.  r=bzbarsky
 
 diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
 --- a/layout/style/nsRuleNode.cpp
 +++ b/layout/style/nsRuleNode.cpp
-@@ -260,64 +260,79 @@ static nscoord CalcLengthWith(const nsCS
+@@ -260,64 +260,80 @@ static nscoord CalcLengthWith(const nsCS
      // properties by not calling CalcLength in those cases:  SetCoord
      // only calls CalcLength for a calc when it is appropriate to do so.
      CalcLengthCalcOps ops(aFontSize, aStyleFont,
@@ -27,7 +27,7 @@ diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
 -    // prefs into account?
 -    aFontSize = styleFont->mFont.size;
 -  }
--  switch (aValue.GetUnit()) {
+   switch (aValue.GetUnit()) {
 +    // While we could deal with 'rem' units correctly by simply not
 +    // caching any data that uses them in the rule tree, it's valuable
 +    // to store them in the rule tree (for faster dynamic changes of
@@ -100,3 +100,22 @@ diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
        nsRefPtr<nsFontMetrics> fm =
          GetMetricsFor(aPresContext, aStyleContext, styleFont,
                        aFontSize, aUseUserFontSet);
+@@ -1440,17 +1456,17 @@ CheckFontCallback(const nsRuleData* aRul
+                   nsRuleNode::RuleDetail aResult)
+ {
+   // em, ex, percent, 'larger', and 'smaller' values on font-size depend
+   // on the parent context's font-size
+   // Likewise, 'lighter' and 'bolder' values of 'font-weight', and 'wider'
+   // and 'narrower' values of 'font-stretch' depend on the parent.
+   const nsCSSValue& size = *aRuleData->ValueForFontSize();
+   const nsCSSValue& weight = *aRuleData->ValueForFontWeight();
+-  if (size.IsRelativeLengthUnit() ||
++  if ((size.IsRelativeLengthUnit() && size.GetUnit() != eCSSUnit_RootEM) ||
+       size.GetUnit() == eCSSUnit_Percent ||
+       (size.GetUnit() == eCSSUnit_Enumerated &&
+        (size.GetIntValue() == NS_STYLE_FONT_SIZE_SMALLER ||
+         size.GetIntValue() == NS_STYLE_FONT_SIZE_LARGER)) ||
+       aRuleData->ValueForScriptLevel()->GetUnit() == eCSSUnit_Integer ||
+       (weight.GetUnit() == eCSSUnit_Enumerated &&
+        (weight.GetIntValue() == NS_STYLE_FONT_WEIGHT_BOLDER ||
+         weight.GetIntValue() == NS_STYLE_FONT_WEIGHT_LIGHTER))) {

@@ -1,0 +1,66 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1351271060 -7200
+# Node ID b4ca4ddb74dc3aaf0ed7c459661ddd08c02073aa
+# Parent  223127705ad2c45909414dd24e08e98b16ebb851
+Bug 804970, patch 6: Don't force rem units out of the rule tree.  r=bzbarsky
+
+diff --git a/layout/style/nsRuleNode.cpp b/layout/style/nsRuleNode.cpp
+--- a/layout/style/nsRuleNode.cpp
++++ b/layout/style/nsRuleNode.cpp
+@@ -287,37 +287,54 @@ static nscoord CalcLengthWith(const nsCS
+         // the root element, in which case aFontSize is already the
+         // value we want.
+         rootFontSize = aFontSize;
+       } else if (aStyleContext && !aStyleContext->GetParent()) {
+         // This is the root element (XXX we don't really know this, but
+         // nsRuleNode::SetFont makes the same assumption!), so we should
+         // use GetStyleFont on this context to get the root element's
+         // font size.
++        const nsStyleFont *styleFont =
++          aStyleFont ? aStyleFont : aStyleContext->GetStyleFont();
+         rootFontSize = styleFont->mFont.size;
+       } else {
+         // This is not the root element or we are calculating something other
+         // than font size, so rem is relative to the root element's font size.
+         nsRefPtr<nsStyleContext> rootStyle;
+-        const nsStyleFont *rootStyleFont = styleFont;
++        const nsStyleFont *rootStyleFont =
++          aStyleFont ? aStyleFont : aStyleContext->GetStyleFont();
+         Element* docElement = aPresContext->Document()->GetRootElement();
+ 
+         if (docElement) {
+           rootStyle = aPresContext->StyleSet()->ResolveStyleFor(docElement,
+                                                                 nullptr);
+           if (rootStyle) {
+             rootStyleFont = rootStyle->GetStyleFont();
+           }
+         }
+ 
+         rootFontSize = rootStyleFont->mFont.size;
+       }
+ 
+       return ScaleCoord(aValue, float(rootFontSize));
+     }
++    default:
++      // Fall through to the code for units that can't be stored in the
++      // rule tree because they depend on font data.
++      break;
++  }
++  switch (aValue.GetUnit()) {
++    // While we could deal with 'rem' units correctly by simply not
++    // caching any data that uses them in the rule tree, it's valuable
++    // to store them in the rule tree (for faster dynamic changes of
++    // other things).  And since the font size of the root element
++    // changes rarely, we instead handle dynamic changes to the root
++    // element's font size by rebuilding all style data in
++    // nsCSSFrameConstructor::RestyleElement.
++  switch (aValue.GetUnit()) {
+     case eCSSUnit_EM: {
+       return ScaleCoord(aValue, float(aFontSize));
+       // XXX scale against font metrics height instead?
+     }
+     case eCSSUnit_XHeight: {
+       nsRefPtr<nsFontMetrics> fm =
+         GetMetricsFor(aPresContext, aStyleContext, styleFont,
+                       aFontSize, aUseUserFontSet);

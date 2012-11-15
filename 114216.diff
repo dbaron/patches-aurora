@@ -1,0 +1,102 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1351271060 -7200
+# Node ID 4cbdfdc99de692e766ba7d8f4614a18819ffbe19
+# Parent  b7208db3d077b79fc95ebe1a52eda7495f8e6ec2
+Bug 804970, patch 4: Refactor part of RebuildAllStyleData into a helper function (slightly reordering it), so that we can share that part.  r=bzbarsky
+
+diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
+--- a/layout/base/nsCSSFrameConstructor.cpp
++++ b/layout/base/nsCSSFrameConstructor.cpp
+@@ -12007,47 +12007,56 @@ nsCSSFrameConstructor::RebuildAllStyleDa
+   nsCOMPtr<nsIPresShell> kungFuDeathGrip(mPresShell);
+ 
+   // We may reconstruct frames below and hence process anything that is in the
+   // tree. We don't want to get notified to process those items again after.
+   mPresShell->GetDocument()->FlushPendingNotifications(Flush_ContentAndNotify);
+ 
+   nsAutoScriptBlocker scriptBlocker;
+ 
++  nsPresContext *presContext = mPresShell->GetPresContext();
++  presContext->SetProcessingRestyles(true);
++
++  DoRebuildAllStyleData(mPendingRestyles, aExtraHint);
++
++  presContext->SetProcessingRestyles(false);
++
++  // Make sure that we process any pending animation restyles from the
++  // above style change.  Note that we can *almost* implement the above
++  // by just posting a style change -- except we really need to restyle
++  // the root frame rather than the root element's primary frame.
++  ProcessPendingRestyles();
++}
++
++void
++nsCSSFrameConstructor::DoRebuildAllStyleData(RestyleTracker& aRestyleTracker,
++                                             nsChangeHint aExtraHint)
++{
+   // Tell the style set to get the old rule tree out of the way
+   // so we can recalculate while maintaining rule tree immutability
+   nsresult rv = mPresShell->StyleSet()->BeginReconstruct();
+   if (NS_FAILED(rv)) {
+     return;
+   }
+ 
+-  nsPresContext *presContext = mPresShell->GetPresContext();
+-  presContext->SetProcessingRestyles(true);
+   // Recalculate all of the style contexts for the document
+   // Note that we can ignore the return value of ComputeStyleChangeFor
+   // because we never need to reframe the root frame
+   // XXX This could be made faster by not rerunning rule matching
+   // (but note that nsPresShell::SetPreferenceStyleRules currently depends
+   // on us re-running rule matching here
+   nsStyleChangeList changeList;
+   // XXX Does it matter that we're passing aExtraHint to the real root
+   // frame and not the root node's primary frame?
+   // Note: The restyle tracker we pass in here doesn't matter.
+   ComputeStyleChangeFor(mPresShell->GetRootFrame(),
+                         &changeList, aExtraHint,
+-                        mPendingRestyles, true);
++                        aRestyleTracker, true);
+   // Process the required changes
+   ProcessRestyledFrames(changeList);
+-  presContext->SetProcessingRestyles(false);
+-
+-  // Make sure that we process any pending animation restyles from the
+-  // above style change.  Note that we can *almost* implement the above
+-  // by just posting a style change -- except we really need to restyle
+-  // the root frame rather than the root element's primary frame.
+-  ProcessPendingRestyles();
+ 
+   // Tell the style set it's safe to destroy the old rule tree.  We
+   // must do this after the ProcessRestyledFrames call in case the
+   // change list has frame reconstructs in it (since frames to be
+   // reconstructed will still have their old style context pointers
+   // until they are destroyed).
+   mPresShell->StyleSet()->EndReconstruct();
+ }
+diff --git a/layout/base/nsCSSFrameConstructor.h b/layout/base/nsCSSFrameConstructor.h
+--- a/layout/base/nsCSSFrameConstructor.h
++++ b/layout/base/nsCSSFrameConstructor.h
+@@ -271,16 +271,21 @@ public:
+   // itself.
+   void ProcessPendingRestyles();
+   
+   // Rebuilds all style data by throwing out the old rule tree and
+   // building a new one, and additionally applying aExtraHint (which
+   // must not contain nsChangeHint_ReconstructFrame) to the root frame.
+   void RebuildAllStyleData(nsChangeHint aExtraHint);
+ 
++  // Helper that does part of the work of RebuildAllStyleData, shared by
++  // RestyleElement for 'rem' handling.
++  void DoRebuildAllStyleData(RestyleTracker& aRestyleTracker,
++                             nsChangeHint aExtraHint);
++
+   // See PostRestyleEventCommon below.
+   void PostRestyleEvent(Element* aElement,
+                         nsRestyleHint aRestyleHint,
+                         nsChangeHint aMinChangeHint)
+   {
+     nsPresContext *presContext = mPresShell->GetPresContext();
+     if (presContext) {
+       PostRestyleEventCommon(aElement, aRestyleHint, aMinChangeHint,

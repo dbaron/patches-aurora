@@ -3,9 +3,6 @@ From: L. David Baron <dbaron@dbaron.org>
 Disable try platforms that I don't want.
 
 See https://wiki.mozilla.org/Build:TryChooser for full syntax.  Summary is:
-  -a --do-everything
-      Run everything that we'd run if you pushed to mozilla-central: debug /
-      opt builds, all tests, all talos.
 
   -b --build TYPE
       Choose what type of builds you'd like made:
@@ -16,7 +13,7 @@ See https://wiki.mozilla.org/Build:TryChooser for full syntax.  Summary is:
   -p --platform LIST
       Choose which platform(s) you'd like to build for with a
       comma-separated list:
-        linux,linux64,macosx,macosx64,win32,maemo5-qt,android-r7,maemo5-gtk
+        linux,linux64,macosx,macosx64,win32,android,android-xul,maemo5-gtk,maemo5-qt
       or specify 'none' or 'all'.
 
   -u --unittests LIST
@@ -28,8 +25,22 @@ See https://wiki.mozilla.org/Build:TryChooser for full syntax.  Summary is:
 
   -t --talos LIST
       Choose which talos suites you'd like to run:
-        tp4,tscroll,tspider,etc.
+        tpn,chromez,nochromer,other,dirtypaint,svgr,dromaeojs,xperf,remote-ts,remote-tdhtml,remote-tsvg,remote-tpan,remote-trobopan,remote-trobocheck,remote-troboprovider,remote-trobocheck2,remote-trobocheck3,remote-tp4m_nochrome
       or specify 'none' or 'all'.
 
-try: --build d --platform linux,macosx64,win32 --unittests all --talos none
+  Email notification control: (these are optional, default is to get emails on non-success)
+
+  -e --all-emails (optional)
+      Get notified by email of each builder in the try run's results
+
+  -n --no-emails (optional)
+      Get no email notifications of each builder's results
+
+  Bugzilla commenting:
+
+  --post-to-bugzilla Bug BUGNUMBER (optional)
+      Get a comment in your specified BUGNUMBER at the end of the try run with a tally of the results and a tbpl link
+
+
+try: --build d --platform linux64,macosx64,win32 --unittests crashtest,reftest,mochitests --talos none --no-emails
 

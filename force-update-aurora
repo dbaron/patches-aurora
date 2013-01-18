@@ -1,0 +1,17 @@
+From: L. David Baron <dbaron@dbaron.org>
+
+Bug 823989 testing: Force MOZ_UPDATE_CHANNEL=aurora.
+
+diff --git a/build/mozconfig.common.override b/build/mozconfig.common.override
+--- a/build/mozconfig.common.override
++++ b/build/mozconfig.common.override
+@@ -4,8 +4,9 @@
+ 
+ # Common mozconfig for all users
+ #
+ # Add options to this file that will be inherited by all in-tree mozconfigs.
+ # This file is included at the *end* of the mozconfigs, and so may be used
+ # to override anything done previously.
+ #
+ # The common expected usage is for try builds with nondefault options.
++export MOZ_UPDATE_CHANNEL=aurora

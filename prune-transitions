@@ -1,0 +1,273 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1430101219 25200
+#      Sun Apr 26 19:20:19 2015 -0700
+# Node ID 296bda936bd61a6071e411988f388098bc720ba5
+# Parent  10fb1d23ac56c10091f94d3f95b4050e53d1ef20
+Bug 1144410 - Remove finished transitions when a frame transitions away from being display:none. r=birtles, a=lizzard
+
+Since bug 960465 patch 14, we've retained finished transitions in order
+to handle the issues described in
+https://lists.w3.org/Archives/Public/www-style/2015Jan/0444.html .  The
+code that did this made the assumption that the transition manager is
+notified of the full sequence of style changes that happen to an
+element.  However, when an element becomes part of a display:none
+subtree and then later becomes displayed again, the transition manager
+is not notified of a style change when it becomes displayed again (when
+we do not have the old style context).
+
+This patch introduces code to prune the finished transitions when that
+happens.
+
+This really fixes only part of the set of problems described in bug
+1158431, which also affect running transitions.  However, it's the part
+of that set that was a regression from bug 960465, which introduced the
+retention of finished transitions, and which makes these issues
+substantially easier to hit.
+
+I'd like to fix this part quickly because it's a regression and we
+should backport the fix.
+
+Without the patch, I confirmed that the following two tests fail:
+INFO TEST-UNEXPECTED-FAIL | layout/style/test/test_transitions_dynamic_changes.html | bug 1144410 test - opacity after starting second transition - got 0, expected 1
+INFO TEST-UNEXPECTED-FAIL | layout/style/test/test_transitions_dynamic_changes.html | bug 1144410 test - opacity during second transition - got 0, expected 0.5
+
+With the patch, all the added tests pass.
+
+diff --git a/layout/base/nsCSSFrameConstructor.cpp b/layout/base/nsCSSFrameConstructor.cpp
+--- a/layout/base/nsCSSFrameConstructor.cpp
++++ b/layout/base/nsCSSFrameConstructor.cpp
+@@ -82,16 +82,17 @@
+ #include "nsBlockFrame.h"
+ #include "nsCanvasFrame.h"
+ #include "nsFirstLetterFrame.h"
+ #include "nsGfxScrollFrame.h"
+ #include "nsPageFrame.h"
+ #include "nsSimplePageSequenceFrame.h"
+ #include "nsTableOuterFrame.h"
+ #include "nsIScrollableFrame.h"
++#include "nsTransitionManager.h"
+ 
+ #ifdef MOZ_XUL
+ #include "nsIRootBox.h"
+ #endif
+ #ifdef ACCESSIBILITY
+ #include "nsAccessibilityService.h"
+ #endif
+ 
+@@ -1797,16 +1798,20 @@ nsCSSFrameConstructor::CreateGeneratedCo
+     RestyleManager()->GetReframingStyleContexts();
+   if (rsc) {
+     nsStyleContext* oldStyleContext = rsc->Get(container, aPseudoElement);
+     if (oldStyleContext) {
+       RestyleManager::TryStartingTransition(aState.mPresContext,
+                                             container,
+                                             oldStyleContext,
+                                             &pseudoStyleContext);
++    } else {
++      aState.mPresContext->TransitionManager()->
++        PruneCompletedTransitions(container, aPseudoElement,
++                                  pseudoStyleContext);
+     }
+   }
+ 
+   uint32_t contentCount = pseudoStyleContext->StyleContent()->ContentCount();
+   for (uint32_t contentIndex = 0; contentIndex < contentCount; contentIndex++) {
+     nsCOMPtr<nsIContent> content =
+       CreateGeneratedContent(aState, aParentContent, pseudoStyleContext,
+                              contentIndex);
+@@ -4841,20 +4846,24 @@ nsCSSFrameConstructor::ResolveStyleConte
+     result = styleSet->ResolveStyleForNonElement(aParentStyleContext);
+   }
+ 
+   RestyleManager::ReframingStyleContexts* rsc =
+     RestyleManager()->GetReframingStyleContexts();
+   if (rsc) {
+     nsStyleContext* oldStyleContext =
+       rsc->Get(aContent, nsCSSPseudoElements::ePseudo_NotPseudoElement);
++    nsPresContext* presContext = mPresShell->GetPresContext();
+     if (oldStyleContext) {
+-      RestyleManager::TryStartingTransition(mPresShell->GetPresContext(),
+-                                            aContent,
++      RestyleManager::TryStartingTransition(presContext, aContent,
+                                             oldStyleContext, &result);
++    } else if (aContent->IsElement()) {
++      presContext->TransitionManager()->
++        PruneCompletedTransitions(aContent->AsElement(),
++          nsCSSPseudoElements::ePseudo_NotPseudoElement, result);
+     }
+   }
+ 
+   return result.forget();
+ }
+ 
+ // MathML Mod - RBS
+ void
+diff --git a/layout/style/nsTransitionManager.cpp b/layout/style/nsTransitionManager.cpp
+--- a/layout/style/nsTransitionManager.cpp
++++ b/layout/style/nsTransitionManager.cpp
+@@ -267,16 +267,18 @@ nsTransitionManager::StyleContextChanged
+ 
+   // Stop any transitions for properties that are no longer in
+   // 'transition-property', including finished transitions.
+   // Also stop any transitions (and remove any finished transitions)
+   // for properties that just changed (and are still in the set of
+   // properties to transition), but for which we didn't just start the
+   // transition.  This can happen delay and duration are both zero, or
+   // because the new value is not interpolable.
++  // Note that we also do the latter set of work in
++  // nsTransitionManager::PruneCompletedTransitions.
+   if (collection) {
+     bool checkProperties =
+       disp->mTransitions[0].GetProperty() != eCSSPropertyExtra_all_properties;
+     nsCSSPropertySet allTransitionProperties;
+     if (checkProperties) {
+       for (uint32_t i = disp->mTransitionPropertyCount; i-- != 0; ) {
+         const StyleTransition& t = disp->mTransitions[i];
+         // FIXME: Would be good to find a way to share code between this
+@@ -598,16 +600,69 @@ nsTransitionManager::ConsiderStartingTra
+   }
+   aElementTransitions->UpdateAnimationGeneration(mPresContext);
+ 
+   *aStartedAny = true;
+   aWhichStarted->AddProperty(aProperty);
+ }
+ 
+ void
++nsTransitionManager::PruneCompletedTransitions(mozilla::dom::Element* aElement,
++                                               nsCSSPseudoElements::Type
++                                                 aPseudoType,
++                                               nsStyleContext* aNewStyleContext)
++{
++  AnimationCollection* collection = GetAnimations(aElement, aPseudoType, false);
++  if (!collection) {
++    return;
++  }
++
++  // Remove any finished transitions whose style doesn't match the new
++  // style.
++  // This is similar to some of the work that happens near the end of
++  // nsTransitionManager::StyleContextChanged.
++  // FIXME (bug 1158431): Really, we should also cancel running
++  // transitions whose destination doesn't match as well.
++  AnimationPtrArray& animations = collection->mAnimations;
++  size_t i = animations.Length();
++  MOZ_ASSERT(i != 0, "empty transitions list?");
++  do {
++    --i;
++    Animation* anim = animations[i];
++    dom::KeyframeEffectReadonly* effect = anim->GetEffect();
++
++    if (!effect->IsFinishedTransition()) {
++      continue;
++    }
++
++    MOZ_ASSERT(effect && effect->Properties().Length() == 1,
++               "Should have one animation property for a transition");
++    MOZ_ASSERT(effect && effect->Properties()[0].mSegments.Length() == 1,
++               "Animation property should have one segment for a transition");
++    const AnimationProperty& prop = effect->Properties()[0];
++    const AnimationPropertySegment& segment = prop.mSegments[0];
++
++    // Since effect is a finished transition, we know it didn't
++    // influence style.
++    StyleAnimationValue currentValue;
++    if (!ExtractComputedValueForTransition(prop.mProperty, aNewStyleContext,
++                                           currentValue) ||
++        currentValue != segment.mToValue) {
++      animations.RemoveElementAt(i);
++    }
++  } while (i != 0);
++
++  if (collection->mAnimations.IsEmpty()) {
++    collection->Destroy();
++    // |collection| is now a dangling pointer!
++    collection = nullptr;
++  }
++}
++
++void
+ nsTransitionManager::UpdateCascadeResultsWithTransitions(
+                        AnimationPlayerCollection* aTransitions)
+ {
+   AnimationPlayerCollection* animations =
+     mPresContext->AnimationManager()->
+       GetAnimationPlayers(aTransitions->mElement,
+                           aTransitions->PseudoElementType(), false);
+   UpdateCascadeResults(aTransitions, animations);
+diff --git a/layout/style/nsTransitionManager.h b/layout/style/nsTransitionManager.h
+--- a/layout/style/nsTransitionManager.h
++++ b/layout/style/nsTransitionManager.h
+@@ -123,16 +123,28 @@ public:
+    * *aNewStyleContext) to cover up some of the changes for the duration
+    * of the restyling of descendants.  If it does, this function will
+    * take care of causing the necessary restyle afterwards.
+    */
+   void StyleContextChanged(mozilla::dom::Element *aElement,
+                            nsStyleContext *aOldStyleContext,
+                            nsRefPtr<nsStyleContext>* aNewStyleContext /* inout */);
+ 
++  /**
++   * When we're resolving style for an element that previously didn't have
++   * style, we might have some old finished transitions for it, if,
++   * say, it was display:none for a while, but previously displayed.
++   *
++   * This method removes any finished transitions that don't match the
++   * new style.
++   */
++  void PruneCompletedTransitions(mozilla::dom::Element* aElement,
++                                 nsCSSPseudoElements::Type aPseudoType,
++                                 nsStyleContext* aNewStyleContext);
++
+   void UpdateCascadeResultsWithTransitions(
+          AnimationPlayerCollection* aTransitions);
+   void UpdateCascadeResultsWithAnimations(
+          const AnimationPlayerCollection* aAnimations);
+   void UpdateCascadeResultsWithAnimationsToBeDestroyed(
+          const AnimationPlayerCollection* aAnimations);
+   void UpdateCascadeResults(AnimationPlayerCollection* aTransitions,
+                             const AnimationPlayerCollection* aAnimations);
+diff --git a/layout/style/test/test_transitions_dynamic_changes.html b/layout/style/test/test_transitions_dynamic_changes.html
+--- a/layout/style/test/test_transitions_dynamic_changes.html
++++ b/layout/style/test/test_transitions_dynamic_changes.html
+@@ -67,13 +67,40 @@ is(cs.textIndent, "100px", "value should
+ utils.advanceTimeAndRefresh(10);
+ is(endCount, 0, "should not have started transition when combined duration less than or equal to 0");
+ p.style.transitionDelay = "-2s";
+ p.style.textIndent = "0";
+ is(cs.textIndent, "0px", "value should now be 0px");
+ utils.advanceTimeAndRefresh(10);
+ is(endCount, 0, "should not have started transition when combined duration less than or equal to 0");
+ utils.restoreNormalRefresh();
++p.style.textIndent = "";
++
++/** Test for bug 1144410 */
++utils.advanceTimeAndRefresh(0);
++p.style.transition = "opacity 200ms linear";
++p.style.opacity = "1";
++is(cs.opacity, "1", "bug 1144410 test - initial opacity");
++p.style.opacity = "0";
++is(cs.opacity, "1", "bug 1144410 test - opacity after starting transition");
++utils.advanceTimeAndRefresh(100);
++is(cs.opacity, "0.5", "bug 1144410 test - opacity during transition");
++utils.advanceTimeAndRefresh(200);
++is(cs.opacity, "0", "bug 1144410 test - opacity after transition");
++document.body.style.display = "none";
++is(cs.opacity, "0", "bug 1144410 test - opacity after display:none");
++p.style.opacity = "1";
++document.body.style.display = "";
++is(cs.opacity, "1", "bug 1144410 test - second transition, initial opacity");
++p.style.opacity = "0";
++is(cs.opacity, "1", "bug 1144410 test - opacity after starting second transition");
++utils.advanceTimeAndRefresh(100);
++is(cs.opacity, "0.5", "bug 1144410 test - opacity during second transition");
++utils.advanceTimeAndRefresh(200);
++is(cs.opacity, "0", "bug 1144410 test - opacity after second transition");
++utils.restoreNormalRefresh();
++p.style.opacity = "";
++p.style.transition = "";
+ 
+ </script>
+ </pre>
+ </body>
+ </html>

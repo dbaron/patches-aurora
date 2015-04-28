@@ -4,7 +4,7 @@
 #      Sun Apr 26 19:20:19 2015 -0700
 # Node ID 296bda936bd61a6071e411988f388098bc720ba5
 # Parent  10fb1d23ac56c10091f94d3f95b4050e53d1ef20
-Bug 1144410 - Remove finished transitions when a frame transitions away from being display:none. r=birtles, a=lizzard
+Bug 1144410 - Remove finished transitions when a frame transitions away from being display:none.  r=birtles, a=lizzard
 
 Since bug 960465 patch 14, we've retained finished transitions in order
 to handle the issues described in

@@ -140,7 +140,7 @@ diff --git a/layout/style/nsTransitionManager.cpp b/layout/style/nsTransitionMan
 +                                               nsStyleContext* aNewStyleContext)
 +{
 +  AnimationPlayerCollection* collection =
-+    GetAnimationPlayers(aElement, pseudoType, false);
++    GetAnimationPlayers(aElement, aPseudoType, false);
 +  if (!collection) {
 +    return;
 +  }
@@ -151,12 +151,12 @@ diff --git a/layout/style/nsTransitionManager.cpp b/layout/style/nsTransitionMan
 +  // nsTransitionManager::StyleContextChanged.
 +  // FIXME (bug 1158431): Really, we should also cancel running
 +  // transitions whose destination doesn't match as well.
-+  AnimationPlayerPtrArray& players = collection->mAnimations;
++  AnimationPlayerPtrArray& players = collection->mPlayers;
 +  size_t i = players.Length();
 +  MOZ_ASSERT(i != 0, "empty transitions list?");
 +  do {
 +    --i;
-+    Animation* player = players[i];
++    AnimationPlayer* player = players[i];
 +    dom::Animation* anim = player->GetSource();
 +
 +    if (!anim->IsFinishedTransition()) {
@@ -180,7 +180,7 @@ diff --git a/layout/style/nsTransitionManager.cpp b/layout/style/nsTransitionMan
 +    }
 +  } while (i != 0);
 +
-+  if (collection->mAnimations.IsEmpty()) {
++  if (collection->mPlayers.IsEmpty()) {
 +    collection->Destroy();
 +    // |collection| is now a dangling pointer!
 +    collection = nullptr;

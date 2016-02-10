@@ -1,9 +1,3 @@
-# HG changeset patch
-# User L. David Baron <dbaron@dbaron.org>
-# Date 1454539382 -39600
-#      Thu Feb 04 09:43:02 2016 +1100
-# Node ID b34ebd7afb7811db1ef5ba36dc5c22153c99d5ce
-# Parent  d68daa674f403de8093ea36b03825bbff493fe25
 Bug 823483 patch 4 - Make a percentage max-width override a fixed width for replaced element intrinsic size computation.  r=dholbert  a=lizzard
 
 This just reorders the if-else chain to change which conditions are

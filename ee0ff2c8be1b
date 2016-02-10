@@ -4,7 +4,7 @@
 #      Thu Feb 04 09:43:02 2016 +1100
 # Node ID ee0ff2c8be1bf45c2431b4010ff1fe068a286400
 # Parent  65e84ada79e41a3afdcb0d8148a84a7152888df1
-Bug 823483 patch 1 - Check for percentage max-width in addition to percentage width when deciding to ignore intrinsic min-width of replaced elements.  r=dholbert
+Bug 823483 patch 1 - Check for percentage max-width in addition to percentage width when deciding to ignore intrinsic min-width of replaced elements.  r=dholbert  a=lizzard
 
 This (modulo changes in later patches) matches the behavior of Chromium
 and Edge.  It increases the set of elements to which this quirky

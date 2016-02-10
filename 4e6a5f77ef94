@@ -4,7 +4,7 @@
 #      Thu Feb 04 09:43:02 2016 +1100
 # Node ID 4e6a5f77ef94e26e74a19268b0c8b69bb39d3b55
 # Parent  b34ebd7afb7811db1ef5ba36dc5c22153c99d5ce
-Bug 823483 patch 5 - Make (again) percentage width on text inputs make intrinsic minimum width be 0.  r=dholbert
+Bug 823483 patch 5 - Make (again) percentage width on text inputs make intrinsic minimum width be 0.  r=dholbert  a=lizzard
 
 This restores the quirky behavior for text inputs, which was removed by
 patch 2, but only halfway (for width but not max-width), which matches

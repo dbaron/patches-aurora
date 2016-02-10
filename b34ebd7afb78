@@ -14,7 +14,7 @@ opposite of the one that matches Chromium and Edge.
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 --- a/layout/base/nsLayoutUtils.cpp
 +++ b/layout/base/nsLayoutUtils.cpp
-@@ -4537,28 +4537,30 @@ AddIntrinsicSizeOffset(nsRenderingContex
+@@ -4538,28 +4538,30 @@ AddIntrinsicSizeOffset(nsRenderingContex
    coordOutsideSize += aOffsets.hMargin;
    pctOutsideSize += aOffsets.hPctMargin;
  

@@ -13,7 +13,7 @@ behavior applies.
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 --- a/layout/base/nsLayoutUtils.cpp
 +++ b/layout/base/nsLayoutUtils.cpp
-@@ -4543,22 +4543,21 @@ AddIntrinsicSizeOffset(nsRenderingContex
+@@ -4544,22 +4544,21 @@ AddIntrinsicSizeOffset(nsRenderingContex
  
    nscoord size;
    if (GetAbsoluteCoord(aStyleSize, size) ||

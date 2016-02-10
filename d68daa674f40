@@ -13,7 +13,7 @@ This matches the behavior of Chromium and Edge.
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 --- a/layout/base/nsLayoutUtils.cpp
 +++ b/layout/base/nsLayoutUtils.cpp
-@@ -4545,17 +4545,17 @@ AddIntrinsicSizeOffset(nsRenderingContex
+@@ -4546,17 +4546,17 @@ AddIntrinsicSizeOffset(nsRenderingContex
    if (GetAbsoluteCoord(aStyleSize, size) ||
        GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
                          PROP_WIDTH, size)) {

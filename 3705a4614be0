@@ -1,0 +1,151 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454539382 -39600
+#      Thu Feb 04 09:43:02 2016 +1100
+# Node ID 3705a4614be0c45f3850deee4f1266ec92521fc7
+# Parent  ee0ff2c8be1bf45c2431b4010ff1fe068a286400
+Bug 823483 patch 2 - Add frame state bit to indicate frame classes that do replaced-element-like sizing.  r=dholbert
+
+This is needed for patch 3.
+
+diff --git a/layout/generic/nsHTMLCanvasFrame.h b/layout/generic/nsHTMLCanvasFrame.h
+--- a/layout/generic/nsHTMLCanvasFrame.h
++++ b/layout/generic/nsHTMLCanvasFrame.h
+@@ -81,17 +81,18 @@ public:
+ #ifdef ACCESSIBILITY
+   virtual mozilla::a11y::AccType AccessibleType() override;
+ #endif
+ 
+   virtual nsIAtom* GetType() const override;
+ 
+   virtual bool IsFrameOfType(uint32_t aFlags) const override
+   {
+-    return nsSplittableFrame::IsFrameOfType(aFlags & ~(nsIFrame::eReplaced));
++    return nsSplittableFrame::IsFrameOfType(aFlags &
++      ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
+   }
+ 
+ #ifdef DEBUG_FRAME_DUMP
+   virtual nsresult GetFrameName(nsAString& aResult) const override;
+ #endif
+ 
+   // Inserted child content gets its frames parented by our child block
+   virtual nsContainerFrame* GetContentInsertionFrame() override {
+diff --git a/layout/generic/nsIFrame.h b/layout/generic/nsIFrame.h
+--- a/layout/generic/nsIFrame.h
++++ b/layout/generic/nsIFrame.h
+@@ -2132,16 +2132,21 @@ public:
+     eBlockFrame =                       1 << 12,
+     eTablePart =                        1 << 13,
+     // If this bit is set, the frame doesn't allow ignorable whitespace as
+     // children. For example, the whitespace between <table>\n<tr>\n<td>
+     // will be excluded during the construction of children. 
+     eExcludesIgnorableWhitespace =      1 << 14,
+     eSupportsCSSTransforms =            1 << 15,
+ 
++    // A replaced element that has replaced-element sizing
++    // characteristics (i.e., like images or iframes), as opposed to
++    // inline-block sizing characteristics (like form controls).
++    eReplacedSizing =                   1 << 16,
++
+     // These are to allow nsFrame::Init to assert that IsFrameOfType
+     // implementations all call the base class method.  They are only
+     // meaningful in DEBUG builds.
+     eDEBUGAllFrames =                   1 << 30,
+     eDEBUGNoFrames =                    1 << 31
+   };
+ 
+   /**
+diff --git a/layout/generic/nsImageFrame.h b/layout/generic/nsImageFrame.h
+--- a/layout/generic/nsImageFrame.h
++++ b/layout/generic/nsImageFrame.h
+@@ -107,17 +107,18 @@ public:
+ #ifdef ACCESSIBILITY
+   virtual mozilla::a11y::AccType AccessibleType() override;
+ #endif
+ 
+   virtual nsIAtom* GetType() const override;
+ 
+   virtual bool IsFrameOfType(uint32_t aFlags) const override
+   {
+-    return ImageFrameSuper::IsFrameOfType(aFlags & ~(nsIFrame::eReplaced));
++    return ImageFrameSuper::IsFrameOfType(aFlags &
++      ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
+   }
+ 
+ #ifdef DEBUG_FRAME_DUMP
+   virtual nsresult GetFrameName(nsAString& aResult) const override;
+   void List(FILE* out = stderr, const char* aPrefix = "", 
+             uint32_t aFlags = 0) const override;
+ #endif
+ 
+diff --git a/layout/generic/nsPluginFrame.h b/layout/generic/nsPluginFrame.h
+--- a/layout/generic/nsPluginFrame.h
++++ b/layout/generic/nsPluginFrame.h
+@@ -86,17 +86,18 @@ public:
+   virtual nsresult  HandleEvent(nsPresContext* aPresContext,
+                                 mozilla::WidgetGUIEvent* aEvent,
+                                 nsEventStatus* aEventStatus) override;
+ 
+   virtual nsIAtom* GetType() const override;
+ 
+   virtual bool IsFrameOfType(uint32_t aFlags) const override
+   {
+-    return nsPluginFrameSuper::IsFrameOfType(aFlags & ~(nsIFrame::eReplaced));
++    return nsPluginFrameSuper::IsFrameOfType(aFlags &
++      ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
+   }
+ 
+   virtual bool NeedsView() override { return true; }
+ 
+ #ifdef DEBUG_FRAME_DUMP
+   virtual nsresult GetFrameName(nsAString& aResult) const override;
+ #endif
+ 
+diff --git a/layout/generic/nsSubDocumentFrame.h b/layout/generic/nsSubDocumentFrame.h
+--- a/layout/generic/nsSubDocumentFrame.h
++++ b/layout/generic/nsSubDocumentFrame.h
+@@ -33,17 +33,19 @@ public:
+ 
+   NS_DECL_QUERYFRAME
+ 
+   virtual nsIAtom* GetType() const override;
+ 
+   virtual bool IsFrameOfType(uint32_t aFlags) const override
+   {
+     return nsSubDocumentFrameSuper::IsFrameOfType(aFlags &
+-      ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
++      ~(nsIFrame::eReplaced |
++        nsIFrame::eReplacedSizing |
++        nsIFrame::eReplacedContainsBlock));
+   }
+ 
+   virtual void Init(nsIContent*       aContent,
+                     nsContainerFrame* aParent,
+                     nsIFrame*         aPrevInFlow) override;
+ 
+   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
+ 
+diff --git a/layout/generic/nsVideoFrame.h b/layout/generic/nsVideoFrame.h
+--- a/layout/generic/nsVideoFrame.h
++++ b/layout/generic/nsVideoFrame.h
+@@ -72,17 +72,18 @@ public:
+ #ifdef ACCESSIBILITY
+   virtual mozilla::a11y::AccType AccessibleType() override;
+ #endif
+ 
+   virtual nsIAtom* GetType() const override;
+ 
+   virtual bool IsFrameOfType(uint32_t aFlags) const override
+   {
+-    return nsSplittableFrame::IsFrameOfType(aFlags & ~(nsIFrame::eReplaced));
++    return nsSplittableFrame::IsFrameOfType(aFlags &
++      ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
+   }
+   
+   virtual nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
+   virtual void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
+                                         uint32_t aFilters) override;
+ 
+   nsIContent* GetPosterImage() { return mPosterImage; }
+ 

@@ -1,0 +1,65 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454539382 -39600
+#      Thu Feb 04 09:43:02 2016 +1100
+# Node ID 4e6a5f77ef94e26e74a19268b0c8b69bb39d3b55
+# Parent  b34ebd7afb7811db1ef5ba36dc5c22153c99d5ce
+Bug 823483 patch 5 - Make (again) percentage width on text inputs make intrinsic minimum width be 0.  r=dholbert
+
+This restores the quirky behavior for text inputs, which was removed by
+patch 2, but only halfway (for width but not max-width), which matches
+Chromium and Edge.
+
+diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
+--- a/layout/base/nsLayoutUtils.cpp
++++ b/layout/base/nsLayoutUtils.cpp
+@@ -4538,21 +4538,24 @@ AddIntrinsicSizeOffset(nsRenderingContex
+   pctOutsideSize += aOffsets.hPctMargin;
+ 
+   min += coordOutsideSize;
+   result = NSCoordSaturatingAdd(result, coordOutsideSize);
+   pctTotal += pctOutsideSize;
+ 
+   nscoord size;
+   if (aType == nsLayoutUtils::MIN_ISIZE &&
+-      (aStyleSize.HasPercent() ||
+-       aStyleMaxSize.HasPercent()) &&
+-      aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
++      (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
++        aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
++       (aStyleSize.HasPercent() &&
++        aFrame->GetType() == nsGkAtoms::textInputFrame))) {
+     // A percentage width or max-width on replaced elements means they
+     // can shrink to 0.
++    // This is also true for percentage widths (but not max-widths) on
++    // text inputs.
+     // Note that if this is max-width, this overrides the fixed-width
+     // rule in the next condition.
+     result = 0; // let |min| handle padding/border/margin
+   } else if (GetAbsoluteCoord(aStyleSize, size) ||
+              GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
+                                PROP_WIDTH, size)) {
+     result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
+                                         pctOutsideSize);
+diff --git a/layout/reftests/bugs/reftest.list b/layout/reftests/bugs/reftest.list
+--- a/layout/reftests/bugs/reftest.list
++++ b/layout/reftests/bugs/reftest.list
+@@ -53,17 +53,17 @@ asserts(2) skip-if(!cocoaWidget) HTTP(..
+ == 25888-2l-block.html 25888-2l-ref.html
+ == 25888-2r-block.html 25888-2r-ref.html
+ == 25888-3l-block.html 25888-3l-ref.html
+ == 25888-3r-block.html 25888-3r-ref.html
+ skip-if(B2G||Mulet) == 28811-1a.html 28811-1-ref.html # Initial mulet triage: parity with B2G/B2G Desktop
+ fuzzy-if(gtkWidget,6,26200) == 28811-1b.html 28811-1-ref.html  # Bug 1128229
+ skip-if(B2G||Mulet) == 28811-2a.html 28811-2-ref.html # Initial mulet triage: parity with B2G/B2G Desktop
+ fuzzy-if(gtkWidget,6,26200) == 28811-2b.html 28811-2-ref.html  # Bug 1128229
+-!= 40596-1a.html 40596-1-ref.html
++== 40596-1a.html 40596-1-ref.html
+ != 40596-1b.html 40596-1-ref.html
+ != 40596-1c.html 40596-1-ref.html
+ != 40596-1d.html 40596-1-ref.html
+ != 40596-1e.html 40596-1-ref.html
+ != 40596-1f.html 40596-1-ref.html
+ != 40596-1g.html 40596-1-ref.html
+ != 40596-1h.html 40596-1-ref.html
+ != 40596-1i.html 40596-1-ref.html

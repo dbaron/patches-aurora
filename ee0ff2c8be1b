@@ -1,0 +1,42 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454539382 -39600
+#      Thu Feb 04 09:43:02 2016 +1100
+# Node ID ee0ff2c8be1bf45c2431b4010ff1fe068a286400
+# Parent  65e84ada79e41a3afdcb0d8148a84a7152888df1
+Bug 823483 patch 1 - Check for percentage max-width in addition to percentage width when deciding to ignore intrinsic min-width of replaced elements.  r=dholbert
+
+This (modulo changes in later patches) matches the behavior of Chromium
+and Edge.  It increases the set of elements to which this quirky
+behavior applies.
+
+diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
+--- a/layout/base/nsLayoutUtils.cpp
++++ b/layout/base/nsLayoutUtils.cpp
+@@ -4543,22 +4543,21 @@ AddIntrinsicSizeOffset(nsRenderingContex
+ 
+   nscoord size;
+   if (GetAbsoluteCoord(aStyleSize, size) ||
+       GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
+                         PROP_WIDTH, size)) {
+     result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
+                                         pctOutsideSize);
+   } else if (aType == nsLayoutUtils::MIN_ISIZE &&
+-             // The only cases of coord-percent-calc() units that
+-             // GetAbsoluteCoord didn't handle are percent and calc()s
+-             // containing percent.
+-             aStyleSize.IsCoordPercentCalcUnit() &&
++             (aStyleSize.HasPercent() ||
++              aStyleMaxSize.HasPercent()) &&
+              aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
+-    // A percentage width on replaced elements means they can shrink to 0.
++    // A percentage width or max-width on replaced elements means they
++    // can shrink to 0.
+     result = 0; // let |min| handle padding/border/margin
+   } else {
+     // NOTE: We could really do a lot better for percents and for some
+     // cases of calc() containing percent (certainly including any where
+     // the coefficient on the percent is positive and there are no max()
+     // expressions).  However, doing better for percents wouldn't be
+     // backwards compatible.
+     result = nsLayoutUtils::AddPercents(aType, result, pctTotal);

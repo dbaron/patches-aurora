@@ -1,0 +1,68 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454539382 -39600
+#      Thu Feb 04 09:43:02 2016 +1100
+# Node ID d68daa674f403de8093ea36b03825bbff493fe25
+# Parent  3705a4614be0c45f3850deee4f1266ec92521fc7
+Bug 823483 patch 3 - Limit effect of percentage width and max-width on intrinsic size to elements with replaced element sizing.  r=dholbert
+
+This reduces the set of elements to which this quirky behavior applies.
+
+This matches the behavior of Chromium and Edge.
+
+diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
+--- a/layout/base/nsLayoutUtils.cpp
++++ b/layout/base/nsLayoutUtils.cpp
+@@ -4545,17 +4545,17 @@ AddIntrinsicSizeOffset(nsRenderingContex
+   if (GetAbsoluteCoord(aStyleSize, size) ||
+       GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
+                         PROP_WIDTH, size)) {
+     result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
+                                         pctOutsideSize);
+   } else if (aType == nsLayoutUtils::MIN_ISIZE &&
+              (aStyleSize.HasPercent() ||
+               aStyleMaxSize.HasPercent()) &&
+-             aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
++             aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
+     // A percentage width or max-width on replaced elements means they
+     // can shrink to 0.
+     result = 0; // let |min| handle padding/border/margin
+   } else {
+     // NOTE: We could really do a lot better for percents and for some
+     // cases of calc() containing percent (certainly including any where
+     // the coefficient on the percent is positive and there are no max()
+     // expressions).  However, doing better for percents wouldn't be
+diff --git a/layout/reftests/bugs/reftest.list b/layout/reftests/bugs/reftest.list
+--- a/layout/reftests/bugs/reftest.list
++++ b/layout/reftests/bugs/reftest.list
+@@ -53,25 +53,25 @@ asserts(2) skip-if(!cocoaWidget) HTTP(..
+ == 25888-2l-block.html 25888-2l-ref.html
+ == 25888-2r-block.html 25888-2r-ref.html
+ == 25888-3l-block.html 25888-3l-ref.html
+ == 25888-3r-block.html 25888-3r-ref.html
+ skip-if(B2G||Mulet) == 28811-1a.html 28811-1-ref.html # Initial mulet triage: parity with B2G/B2G Desktop
+ fuzzy-if(gtkWidget,6,26200) == 28811-1b.html 28811-1-ref.html  # Bug 1128229
+ skip-if(B2G||Mulet) == 28811-2a.html 28811-2-ref.html # Initial mulet triage: parity with B2G/B2G Desktop
+ fuzzy-if(gtkWidget,6,26200) == 28811-2b.html 28811-2-ref.html  # Bug 1128229
+-== 40596-1a.html 40596-1-ref.html
++!= 40596-1a.html 40596-1-ref.html
+ != 40596-1b.html 40596-1-ref.html
+-== 40596-1c.html 40596-1-ref.html
++!= 40596-1c.html 40596-1-ref.html
+ != 40596-1d.html 40596-1-ref.html
+-== 40596-1e.html 40596-1-ref.html
++!= 40596-1e.html 40596-1-ref.html
+ != 40596-1f.html 40596-1-ref.html
+-== 40596-1g.html 40596-1-ref.html
++!= 40596-1g.html 40596-1-ref.html
+ != 40596-1h.html 40596-1-ref.html
+-== 40596-1i.html 40596-1-ref.html
++!= 40596-1i.html 40596-1-ref.html
+ != 40596-1j.html 40596-1-ref.html
+ == 50630-1a.html 50630-1-ref.html
+ == 50630-1b.html 50630-1-ref.html
+ == 50630-1c.html 50630-1-ref.html
+ == 50630-2.html 50630-2-ref.html
+ == 50630-3.html 50630-3-ref.html
+ == 50630-4.html 50630-4-ref.html
+ == 50630-4.html 50630-4-ref2.html

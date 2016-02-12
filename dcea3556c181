@@ -1,0 +1,129 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454863429 28800
+#      Sun Feb 07 08:43:49 2016 -0800
+# Node ID dcea3556c181336a12e35d2055626f7e6b7b2f24
+# Parent  417122415962057d0f0ddcb6349e9c3499bbdd9b
+Bug 1245075 patch 2 - Fix EffectSet::GetEffectSet(nsIFrame*) and EffectCompositor::GetAnimationElementAndPseudoForFrame to only return effects when the frame is the style frame for its content.  r=birtles
+
+This means that we won't associate animations with additional frames.
+In this case, this fixes associating off-main-thread animations with a
+table outer frame, when they should have been associated only with the
+table frame.
+
+Locally, the test fails without the patch (with opacity in the test
+being 0.36 instead of the expected 0.6), and passes with the patch.
+(Opacity 0.36 gives a color of rgb(163,163,255), whereas 0.6 gives
+rgb(102,102,255).)
+
+diff --git a/dom/animation/EffectCompositor.cpp b/dom/animation/EffectCompositor.cpp
+--- a/dom/animation/EffectCompositor.cpp
++++ b/dom/animation/EffectCompositor.cpp
+@@ -511,16 +511,21 @@ EffectCompositor::GetAnimationElementAnd
+       pseudoType = nsCSSPseudoElements::ePseudo_after;
+     } else {
+       return result;
+     }
+     content = content->GetParent();
+     if (!content) {
+       return result;
+     }
++  } else {
++    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
++      // The effects associated with an element are for its primary frame.
++      return result;
++    }
+   }
+ 
+   if (!content->IsElement()) {
+     return result;
+   }
+ 
+   result = Some(MakePair(content->AsElement(), pseudoType));
+ 
+diff --git a/dom/animation/EffectSet.cpp b/dom/animation/EffectSet.cpp
+--- a/dom/animation/EffectSet.cpp
++++ b/dom/animation/EffectSet.cpp
+@@ -4,16 +4,17 @@
+  * License, v. 2.0. If a copy of the MPL was not distributed with this
+  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+ #include "EffectSet.h"
+ #include "mozilla/dom/Element.h" // For Element
+ #include "RestyleManager.h"
+ #include "nsCycleCollectionNoteChild.h" // For CycleCollectionNoteChild
+ #include "nsPresContext.h"
++#include "nsLayoutUtils.h"
+ 
+ namespace mozilla {
+ 
+ /* static */ void
+ EffectSet::PropertyDtor(void* aObject, nsIAtom* aPropertyName,
+                         void* aPropertyValue, void* aData)
+ {
+   EffectSet* effectSet = static_cast<EffectSet*>(aPropertyValue);
+@@ -65,16 +66,20 @@ EffectSet::GetEffectSet(const nsIFrame* 
+     } else {
+       return nullptr;
+     }
+     content = content->GetParent();
+     if (!content) {
+       return nullptr;
+     }
+   } else {
++    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
++      // The effects associated with an element are for its primary frame.
++      return nullptr;
++    }
+     propName = nsGkAtoms::animationEffectsProperty;
+   }
+ 
+   if (!content->MayHaveAnimations()) {
+     return nullptr;
+   }
+ 
+   return static_cast<EffectSet*>(content->GetProperty(propName));
+diff --git a/layout/reftests/css-animations/animate-display-table-opacity-ref.html b/layout/reftests/css-animations/animate-display-table-opacity-ref.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/css-animations/animate-display-table-opacity-ref.html
+@@ -0,0 +1,9 @@
++<!DOCTYPE html>
++<title>Testcase for bug 1245075</title>
++<style>
++#test {
++  width: 100px; height: 100px;
++  background: rgb(102, 102, 255);
++}
++</style>
++<div id="test"></div>
+diff --git a/layout/reftests/css-animations/animate-display-table-opacity.html b/layout/reftests/css-animations/animate-display-table-opacity.html
+new file mode 100644
+--- /dev/null
++++ b/layout/reftests/css-animations/animate-display-table-opacity.html
+@@ -0,0 +1,14 @@
++<!DOCTYPE html>
++<title>Testcase for bug 1245075</title>
++<style>
++@keyframes HoldOpacity {
++  from, to { opacity: 0.6 }
++}
++#test {
++  width: 100px; height: 100px;
++  background: blue;
++  display: table;
++  animation: HoldOpacity 100s linear infinite;
++}
++</style>
++<div id="test"></div>
+diff --git a/layout/reftests/css-animations/reftest.list b/layout/reftests/css-animations/reftest.list
+--- a/layout/reftests/css-animations/reftest.list
++++ b/layout/reftests/css-animations/reftest.list
+@@ -1,6 +1,7 @@
+ == screen-animations.html screen-animations-ref.html
+ != screen-animations.html screen-animations-notref.html
+ fails == print-no-animations.html print-no-animations-ref.html # reftest harness doesn't actually make pres context non-dynamic for reftest-print tests
+ fails != print-no-animations.html print-no-animations-notref.html # reftest harness doesn't actually make pres context non-dynamic for reftest-print tests
+ == animate-opacity.html animate-opacity-ref.html
+ == animate-preserves3d.html animate-preserves3d-ref.html
++== animate-display-table-opacity.html animate-display-table-opacity-ref.html

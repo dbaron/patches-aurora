@@ -1,0 +1,59 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1454863428 28800
+#      Sun Feb 07 08:43:48 2016 -0800
+# Node ID 417122415962057d0f0ddcb6349e9c3499bbdd9b
+# Parent  3e636d1a01025df5b1a50eac885961cc7bdd850a
+Bug 1245075 patch 1 - Remove assertion, since it can fire during frame destruction.  r=dholbert
+
+Without this patch, patch 2 will cause assertions since
+nsFrame::DestroyFrom calls nsFrame::HasCSSAnimations (at a time when the
+child frame has been destroyed), which calls into the code modified in
+patch 2 to call GetStyleFrame.
+
+diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
+--- a/layout/base/nsLayoutUtils.cpp
++++ b/layout/base/nsLayoutUtils.cpp
+@@ -1471,17 +1471,17 @@ nsLayoutUtils::GetClosestFrameOfType(nsI
+ }
+ 
+ // static
+ nsIFrame*
+ nsLayoutUtils::GetStyleFrame(nsIFrame* aFrame)
+ {
+   if (aFrame->GetType() == nsGkAtoms::tableOuterFrame) {
+     nsIFrame* inner = aFrame->PrincipalChildList().FirstChild();
+-    NS_ASSERTION(inner, "Outer table must have an inner");
++    // inner may be null, if aFrame is mid-destruction
+     return inner;
+   }
+ 
+   return aFrame;
+ }
+ 
+ nsIFrame*
+ nsLayoutUtils::GetStyleFrame(const nsIContent* aContent)
+diff --git a/layout/base/nsLayoutUtils.h b/layout/base/nsLayoutUtils.h
+--- a/layout/base/nsLayoutUtils.h
++++ b/layout/base/nsLayoutUtils.h
+@@ -326,16 +326,20 @@ public:
+     return GetClosestFrameOfType(aFrame, nsGkAtoms::pageFrame);
+   }
+ 
+   /**
+    * Given a frame which is the primary frame for an element,
+    * return the frame that has the non-psuedoelement style context for
+    * the content.
+    * This is aPrimaryFrame itself except for tableOuter frames.
++   *
++   * Given a non-null input, this will return null if and only if its
++   * argument is a table outer frame that is mid-destruction (and its
++   * table frame has been destroyed).
+    */
+   static nsIFrame* GetStyleFrame(nsIFrame* aPrimaryFrame);
+ 
+   /**
+    * Given a content node,
+    * return the frame that has the non-psuedoelement style context for
+    * the content.  May return null.
+    * This is aContent->GetPrimaryFrame() except for tableOuter frames.

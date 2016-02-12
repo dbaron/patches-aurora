@@ -8,7 +8,7 @@ patch 2 to call GetStyleFrame.
 diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 --- a/layout/base/nsLayoutUtils.cpp
 +++ b/layout/base/nsLayoutUtils.cpp
-@@ -1471,17 +1471,17 @@ nsLayoutUtils::GetClosestFrameOfType(nsI
+@@ -1462,17 +1462,17 @@ nsLayoutUtils::GetClosestFrameOfType(nsI
  }
  
  // static
@@ -16,7 +16,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
  nsLayoutUtils::GetStyleFrame(nsIFrame* aFrame)
  {
    if (aFrame->GetType() == nsGkAtoms::tableOuterFrame) {
-     nsIFrame* inner = aFrame->PrincipalChildList().FirstChild();
+     nsIFrame* inner = aFrame->GetFirstPrincipalChild();
 -    NS_ASSERTION(inner, "Outer table must have an inner");
 +    // inner may be null, if aFrame is mid-destruction
      return inner;
@@ -30,7 +30,7 @@ diff --git a/layout/base/nsLayoutUtils.cpp b/layout/base/nsLayoutUtils.cpp
 diff --git a/layout/base/nsLayoutUtils.h b/layout/base/nsLayoutUtils.h
 --- a/layout/base/nsLayoutUtils.h
 +++ b/layout/base/nsLayoutUtils.h
-@@ -326,16 +326,20 @@ public:
+@@ -321,16 +321,20 @@ public:
      return GetClosestFrameOfType(aFrame, nsGkAtoms::pageFrame);
    }
  

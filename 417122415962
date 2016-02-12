@@ -1,10 +1,4 @@
-# HG changeset patch
-# User L. David Baron <dbaron@dbaron.org>
-# Date 1454863428 28800
-#      Sun Feb 07 08:43:48 2016 -0800
-# Node ID 417122415962057d0f0ddcb6349e9c3499bbdd9b
-# Parent  3e636d1a01025df5b1a50eac885961cc7bdd850a
-Bug 1245075 patch 1 - Remove assertion, since it can fire during frame destruction.  r=dholbert
+Bug 1245075 patch 1 - Remove assertion, since it can fire during frame destruction.  r=dholbert  a=lizzard
 
 Without this patch, patch 2 will cause assertions since
 nsFrame::DestroyFrom calls nsFrame::HasCSSAnimations (at a time when the

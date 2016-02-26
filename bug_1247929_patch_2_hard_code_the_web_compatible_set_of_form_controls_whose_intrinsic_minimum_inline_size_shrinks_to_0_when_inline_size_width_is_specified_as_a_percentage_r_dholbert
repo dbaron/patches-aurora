@@ -4,7 +4,7 @@
 #      Wed Feb 24 10:40:29 2016 -0800
 # Node ID 0231b05f03257cdf6d5baff4f917abc35cae3a6e
 # Parent  690295226220f648ceefb8b0b91dac27487aac19
-Bug 1247929 patch 2 - Hard-code the Web-compatible set of form controls whose intrinsic minimum inline-size shrinks to 0 when inline-size (width) is specified as a percentage.  r=dholbert
+Bug 1247929 patch 2 - Hard-code the Web-compatible set of form controls whose intrinsic minimum inline-size shrinks to 0 when inline-size (width) is specified as a percentage.  r=dholbert  a=lizzard
 
 This adjusts the behavior previously modified by bug 823483 patch 2 and
 bug 823483 patch 5.

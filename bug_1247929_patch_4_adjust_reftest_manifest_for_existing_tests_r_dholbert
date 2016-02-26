@@ -4,7 +4,7 @@
 #      Wed Feb 24 10:40:30 2016 -0800
 # Node ID b04fb505620923a2e654935430af939045826dbd
 # Parent  fad0a362eb724e84e0a2f24f50e7aa58afbbed5b
-Bug 1247929 patch 4 - Adjust reftest manifest for existing tests.  r=dholbert
+Bug 1247929 patch 4 - Adjust reftest manifest for existing tests.  r=dholbert  a=lizzard
 
 This reverts some of the changes made in bug 823483 patch 3 because it
 turns out we don't want all of that behavior change.

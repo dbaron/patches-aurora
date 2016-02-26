@@ -4,7 +4,7 @@
 #      Wed Feb 24 10:40:30 2016 -0800
 # Node ID fad0a362eb724e84e0a2f24f50e7aa58afbbed5b
 # Parent  0231b05f03257cdf6d5baff4f917abc35cae3a6e
-Bug 1247929 patch 3 - Reftests.  r=dholbert
+Bug 1247929 patch 3 - Reftests.  r=dholbert  a=lizzard
 
 MozReview-Commit-ID: 95m014qFquG
 

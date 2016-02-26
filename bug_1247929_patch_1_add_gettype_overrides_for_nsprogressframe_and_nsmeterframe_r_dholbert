@@ -1,9 +1,5 @@
 # HG changeset patch
 # User L. David Baron <dbaron@dbaron.org>
-# Date 1456339229 28800
-#      Wed Feb 24 10:40:29 2016 -0800
-# Node ID 690295226220f648ceefb8b0b91dac27487aac19
-# Parent  1606a71166df2cd11e5f9950b3f51c600bfaa495
 Bug 1247929 patch 1 - Add GetType() overrides for nsProgressFrame and nsMeterFrame.  r=dholbert  a=lizzard
 
 These frames previously inherited nsFrame::GetType (which returns null).

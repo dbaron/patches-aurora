@@ -8,19 +8,6 @@
 Bug 1247929 patch 3 - Reftests.  r=dholbert  a=lizzard
 
 MozReview-Commit-ID: 95m014qFquG
-* * *
-Bug 1247929 patch 5 - Remove spurious canvas rule from reftests.  r=dholbert
-
-This removes a rule that was incorrectly added in the tests in patch 3,
-which dholbert pointed out in a review comment (comment 18) made after
-granting review (and only 3 minutes before I pushed the patches), which
-I didn't see before pushing them.
-
-I had incorrectly copied that rule from the
-min-intrinsic-with-percents-across-elements.html test, which I based
-these on.
-
-MozReview-Commit-ID: IARSYkKkIRx
 
 diff --git a/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls-ref.html b/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls-ref.html
 new file mode 100644

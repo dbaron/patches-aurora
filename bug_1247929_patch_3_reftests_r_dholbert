@@ -3,16 +3,30 @@
 # Date 1456339230 28800
 #      Wed Feb 24 10:40:30 2016 -0800
 # Node ID fad0a362eb724e84e0a2f24f50e7aa58afbbed5b
-# Parent  0231b05f03257cdf6d5baff4f917abc35cae3a6e
+# Parent  ee5c093c0cacb84da77e133b0365d8945424f47e
+
 Bug 1247929 patch 3 - Reftests.  r=dholbert  a=lizzard
 
 MozReview-Commit-ID: 95m014qFquG
+* * *
+Bug 1247929 patch 5 - Remove spurious canvas rule from reftests.  r=dholbert
+
+This removes a rule that was incorrectly added in the tests in patch 3,
+which dholbert pointed out in a review comment (comment 18) made after
+granting review (and only 3 minutes before I pushed the patches), which
+I didn't see before pushing them.
+
+I had incorrectly copied that rule from the
+min-intrinsic-with-percents-across-elements.html test, which I based
+these on.
+
+MozReview-Commit-ID: IARSYkKkIRx
 
 diff --git a/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls-ref.html b/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls-ref.html
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls-ref.html
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,95 @@
 +<!DOCTYPE HTML>
 +<title>Tests for bug 823483 / bug 1247929</title>
 +<style>
@@ -31,10 +45,6 @@ new file mode 100644
 +}
 +
 +td:nth-child(1) > * { visibility: hidden; vertical-align: bottom }
-+
-+canvas {
-+  background: blue
-+}
 +
 +</style>
 +
@@ -116,7 +126,7 @@ diff --git a/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-ac
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/css-sizing/min-intrinsic-with-max-width-percents-across-form-controls.html
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,95 @@
 +<!DOCTYPE HTML>
 +<title>Tests for bug 823483 / bug 1247929</title>
 +<style>
@@ -135,10 +145,6 @@ new file mode 100644
 +}
 +
 +td:nth-child(1) > * { visibility: hidden; vertical-align: bottom; max-width: 100% }
-+
-+canvas {
-+  background: blue
-+}
 +
 +</style>
 +
@@ -220,7 +226,7 @@ diff --git a/layout/reftests/css-sizing/min-intrinsic-with-width-percents-across
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/css-sizing/min-intrinsic-with-width-percents-across-form-controls-ref.html
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,95 @@
 +<!DOCTYPE HTML>
 +<title>Tests for bug 823483 / bug 1247929</title>
 +<style>
@@ -239,10 +245,6 @@ new file mode 100644
 +}
 +
 +td:nth-child(1) > * { visibility: hidden; vertical-align: bottom }
-+
-+canvas {
-+  background: blue
-+}
 +
 +</style>
 +
@@ -324,7 +326,7 @@ diff --git a/layout/reftests/css-sizing/min-intrinsic-with-width-percents-across
 new file mode 100644
 --- /dev/null
 +++ b/layout/reftests/css-sizing/min-intrinsic-with-width-percents-across-form-controls.html
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,95 @@
 +<!DOCTYPE HTML>
 +<title>Tests for bug 823483 / bug 1247929</title>
 +<style>
@@ -343,10 +345,6 @@ new file mode 100644
 +}
 +
 +td:nth-child(1) > * { visibility: hidden; vertical-align: bottom; width: 100% }
-+
-+canvas {
-+  background: blue
-+}
 +
 +</style>
 +

@@ -1,0 +1,138 @@
+# HG changeset patch
+# User L. David Baron <dbaron@dbaron.org>
+# Date 1456339229 28800
+#      Wed Feb 24 10:40:29 2016 -0800
+# Node ID 690295226220f648ceefb8b0b91dac27487aac19
+# Parent  1606a71166df2cd11e5f9950b3f51c600bfaa495
+Bug 1247929 patch 1 - Add GetType() overrides for nsProgressFrame and nsMeterFrame.  r=dholbert
+
+These frames previously inherited nsFrame::GetType (which returns null).
+
+MozReview-Commit-ID: 42UzPxaD5pN
+
+diff --git a/dom/base/nsGkAtomList.h b/dom/base/nsGkAtomList.h
+--- a/dom/base/nsGkAtomList.h
++++ b/dom/base/nsGkAtomList.h
+@@ -1972,24 +1972,26 @@ GK_ATOM(imageFrame, "ImageFrame")
+ GK_ATOM(imageControlFrame, "ImageControlFrame")
+ GK_ATOM(inlineFrame, "InlineFrame")
+ GK_ATOM(leafBoxFrame, "LeafBoxFrame")
+ GK_ATOM(legendFrame, "LegendFrame")
+ GK_ATOM(letterFrame, "LetterFrame")
+ GK_ATOM(lineFrame, "LineFrame")
+ GK_ATOM(listControlFrame,"ListControlFrame")
+ GK_ATOM(menuFrame,"MenuFrame")
++GK_ATOM(meterFrame, "MeterFrame")
+ GK_ATOM(menuPopupFrame,"MenuPopupFrame")
+ GK_ATOM(numberControlFrame, "NumberControlFrame")
+ GK_ATOM(objectFrame, "ObjectFrame")
+ GK_ATOM(pageFrame, "PageFrame")
+ GK_ATOM(pageBreakFrame, "PageBreakFrame")
+ GK_ATOM(pageContentFrame, "PageContentFrame")
+ GK_ATOM(placeholderFrame, "PlaceholderFrame")
+ GK_ATOM(popupSetFrame, "PopupSetFrame")
++GK_ATOM(progressFrame, "ProgressFrame")
+ GK_ATOM(canvasFrame, "CanvasFrame")
+ GK_ATOM(rangeFrame, "RangeFrame")
+ GK_ATOM(rootFrame, "RootFrame")
+ GK_ATOM(rubyBaseContainerFrame, "RubyBaseContainerFrame")
+ GK_ATOM(rubyBaseFrame, "RubyBaseFrame")
+ GK_ATOM(rubyFrame, "RubyFrame")
+ GK_ATOM(rubyTextContainerFrame, "RubyTextContainerFrame")
+ GK_ATOM(rubyTextFrame, "RubyTextFrame")
+diff --git a/layout/forms/nsMeterFrame.cpp b/layout/forms/nsMeterFrame.cpp
+--- a/layout/forms/nsMeterFrame.cpp
++++ b/layout/forms/nsMeterFrame.cpp
+@@ -51,16 +51,22 @@ nsMeterFrame::DestroyFrom(nsIFrame* aDes
+   NS_ASSERTION(!GetPrevContinuation(),
+                "nsMeterFrame should not have continuations; if it does we "
+                "need to call RegUnregAccessKey only for the first.");
+   nsFormControlFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
+   nsContentUtils::DestroyAnonymousContent(&mBarDiv);
+   nsContainerFrame::DestroyFrom(aDestructRoot);
+ }
+ 
++nsIAtom*
++nsMeterFrame::GetType() const
++{
++  return nsGkAtoms::meterFrame;
++}
++
+ nsresult
+ nsMeterFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
+ {
+   // Get the NodeInfoManager and tag necessary to create the meter bar div.
+   nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
+ 
+   // Create the div.
+   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
+diff --git a/layout/forms/nsMeterFrame.h b/layout/forms/nsMeterFrame.h
+--- a/layout/forms/nsMeterFrame.h
++++ b/layout/forms/nsMeterFrame.h
+@@ -27,16 +27,18 @@ public:
+ 
+   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
+ 
+   virtual void Reflow(nsPresContext*           aCX,
+                       nsHTMLReflowMetrics&     aDesiredSize,
+                       const nsHTMLReflowState& aReflowState,
+                       nsReflowStatus&          aStatus) override;
+ 
++  virtual nsIAtom* GetType() const override;
++
+ #ifdef DEBUG_FRAME_DUMP
+   virtual nsresult GetFrameName(nsAString& aResult) const override {
+     return MakeFrameName(NS_LITERAL_STRING("Meter"), aResult);
+   }
+ #endif
+ 
+   virtual bool IsLeaf() const override { return true; }
+ 
+diff --git a/layout/forms/nsProgressFrame.cpp b/layout/forms/nsProgressFrame.cpp
+--- a/layout/forms/nsProgressFrame.cpp
++++ b/layout/forms/nsProgressFrame.cpp
+@@ -50,16 +50,22 @@ nsProgressFrame::DestroyFrom(nsIFrame* a
+   NS_ASSERTION(!GetPrevContinuation(),
+                "nsProgressFrame should not have continuations; if it does we "
+                "need to call RegUnregAccessKey only for the first.");
+   nsFormControlFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
+   nsContentUtils::DestroyAnonymousContent(&mBarDiv);
+   nsContainerFrame::DestroyFrom(aDestructRoot);
+ }
+ 
++nsIAtom*
++nsProgressFrame::GetType() const
++{
++  return nsGkAtoms::progressFrame;
++}
++
+ nsresult
+ nsProgressFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
+ {
+   // Create the progress bar div.
+   nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
+   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
+ 
+   // Associate ::-moz-progress-bar pseudo-element to the anonymous child.
+diff --git a/layout/forms/nsProgressFrame.h b/layout/forms/nsProgressFrame.h
+--- a/layout/forms/nsProgressFrame.h
++++ b/layout/forms/nsProgressFrame.h
+@@ -30,16 +30,18 @@ public:
+                                 const nsRect&           aDirtyRect,
+                                 const nsDisplayListSet& aLists) override;
+ 
+   virtual void Reflow(nsPresContext*           aCX,
+                       nsHTMLReflowMetrics&     aDesiredSize,
+                       const nsHTMLReflowState& aReflowState,
+                       nsReflowStatus&          aStatus) override;
+ 
++  virtual nsIAtom* GetType() const override;
++
+ #ifdef DEBUG_FRAME_DUMP
+   virtual nsresult GetFrameName(nsAString& aResult) const override {
+     return MakeFrameName(NS_LITERAL_STRING("Progress"), aResult);
+   }
+ #endif
+ 
+   virtual bool IsLeaf() const override { return true; }
+ 
